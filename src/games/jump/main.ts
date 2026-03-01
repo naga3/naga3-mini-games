@@ -8,12 +8,12 @@ const ctx = setupCanvas(canvas)
 // --- Constants ---
 const GRAVITY = 900
 const JUMP_VEL = -430
-const MOVE_SPEED = 170
+const MOVE_SPEED = 150
 const PLAYER_R = 10
 const PLAT_H = 10
-const PLAT_GAP = 75
-const PLAT_W_BASE = 65
-const PLAT_W_MIN = 38
+const PLAT_GAP = 55
+const PLAT_W_BASE = 90
+const PLAT_W_MIN = 50
 
 // --- State ---
 let px = 0
@@ -36,7 +36,7 @@ let plats: Platform[] = []
 
 /** Platforms get narrower as you climb */
 function platWidth(): number {
-  return Math.max(PLAT_W_MIN, PLAT_W_BASE - score * 0.03)
+  return Math.max(PLAT_W_MIN, PLAT_W_BASE - score * 0.015)
 }
 
 function init() {

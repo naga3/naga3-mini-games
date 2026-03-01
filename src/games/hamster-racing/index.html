@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Hamster Racing - Mini Games</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; background: #1a1a2e; touch-action: none; }
+    canvas { display: block; }
+    .back-link {
+      position: fixed; top: 8px; left: 8px; z-index: 10;
+      color: #888; font: 14px sans-serif; text-decoration: none;
+    }
+    .back-link:hover { color: #eee; }
+  </style>
+</head>
+<body>
+  <a class="back-link" href="../../..">← 一覧に戻る</a>
+  <canvas id="game"></canvas>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

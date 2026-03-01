@@ -6,7 +6,7 @@ const canvas = document.getElementById('game') as HTMLCanvasElement
 const ctx = setupCanvas(canvas)
 
 // ---------- 定数 ----------
-const SPEED = 120          // px/sec
+const SPEED = 200          // px/sec
 const TURN_RADIUS = 50     // 旋回半径
 const ANGULAR_SPEED = SPEED / TURN_RADIUS // rad/sec
 const SEG_R = 7            // セグメント半径

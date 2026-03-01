@@ -90,7 +90,6 @@ function init() {
   vy = 0
   rot = 0
   charging = false
-  holding = false
   power = 0
   onFloor = true
   dead = false
@@ -105,10 +104,7 @@ function init() {
 init()
 
 // --- Input (press & hold) ---
-let holding = false   // true while pointer/touch is down
-
 function onDown() {
-  holding = true
   if (dead) { init(); return }
   if (!started) { started = true; return }
   if (onFloor && !charging) {
@@ -118,7 +114,6 @@ function onDown() {
 }
 
 function onUp() {
-  holding = false
   if (!charging) return
   charging = false
   const p = Math.max(MIN_JUMP, power)
@@ -166,11 +161,6 @@ function update(dt: number) {
       dy = floorY() - R
       vy = 0
       onFloor = true
-      // Buffered input: if still holding, start charging immediately
-      if (holding) {
-        charging = true
-        power = 0
-      }
     }
   }
 

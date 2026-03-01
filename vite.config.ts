@@ -11,6 +11,7 @@ export default defineConfig({
         snake: resolve(__dirname, 'src/games/snake/index.html'),
         jump: resolve(__dirname, 'src/games/jump/index.html'),
         'daruma-jump': resolve(__dirname, 'src/games/daruma-jump/index.html'),
+        'hamster-racing': resolve(__dirname, 'src/games/hamster-racing/index.html'),
       },
     },
   },

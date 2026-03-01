@@ -8,6 +8,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         walking: resolve(__dirname, 'src/games/walking-demo/index.html'),
+        snake: resolve(__dirname, 'src/games/snake/index.html'),
       },
     },
   },

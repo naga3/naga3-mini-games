@@ -78,7 +78,9 @@ function genHoles() {
 }
 
 function overHole(worldX: number): boolean {
-  return holes.some(h => worldX > h.x && worldX < h.x + h.w)
+  // Shrink hole hitbox by R/3 on each side → 1/3 on ground = safe
+  const m = R / 3
+  return holes.some(h => worldX > h.x + m && worldX < h.x + h.w - m)
 }
 
 // --- Init ---

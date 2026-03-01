@@ -9,16 +9,17 @@ const SPEED_BASE = 150      // starting speed px/s
 const SPEED_MAX = 320       // max speed px/s
 const GRAVITY = 1200
 const MAX_CHARGE = 0.8      // seconds to full power
-const JUMP_VEL = -650       // max vertical velocity
+const JUMP_VEL = -960       // max vertical velocity (~3x HOLE_W at base speed)
 const MIN_JUMP = 0.2        // minimum power fraction
 const R = 20                // daruma radius
 const GROUND_H = 80         // ground area height from bottom
 
 // Difficulty curve
 const FIRST_HOLE = 400
-const HOLE_W = 80           // fixed hole width
-const GAP_MAX = 350         // space between holes (easy)
-const GAP_MIN = 120         // space between holes (hard)
+const HOLE_W = 80           // single hole width
+const GAP_BASE = 200        // avg gap at start
+const LANDING_W = 50        // min solid strip (safety net)
+const SAFE_RATIO = 0.85     // max void = 85% of max jump
 
 // --- Types ---
 interface Hole { x: number; w: number }
@@ -38,6 +39,7 @@ let score = 0
 let best = +(localStorage.getItem('daruma-best') ?? 0)
 let holes: Hole[] = []
 let nextHole = FIRST_HOLE
+let voidLen = 0             // current consecutive void length
 
 // Derived helpers
 const floorY = () => getCanvasSize().h - GROUND_H
@@ -45,17 +47,33 @@ const screenX = () => Math.min(getCanvasSize().w * 0.28, 120)
 
 // --- Difficulty ---
 function curSpeed() { return Math.min(SPEED_MAX, SPEED_BASE + score * 0.3) }
-function calcGap() {
-  const base = Math.max(GAP_MIN, GAP_MAX - score * 0.5)
-  const jitter = base * 0.4
-  return base + (Math.random() * 2 - 1) * jitter
-}
+function maxJumpDist() { return curSpeed() * 2 * Math.abs(JUMP_VEL) / GRAVITY }
 
 function genHoles() {
   const limit = wx + getCanvasSize().w * 3
   while (nextHole < limit) {
+    const maxSafe = maxJumpDist() * SAFE_RATIO
+
+    // Gap shrinks with score; can reach near-zero for merged holes
+    const gBase = Math.max(40, GAP_BASE - score * 0.5)
+    const gap = gBase * Math.random() * 2
+
+    if (gap >= LANDING_W) {
+      // Big enough to land on → safe strip, reset void
+      voidLen = HOLE_W
+      nextHole += gap
+    } else if (voidLen + gap + HOLE_W > maxSafe) {
+      // Merging would exceed jumpable distance → force landing strip
+      nextHole += LANDING_W
+      voidLen = HOLE_W
+    } else {
+      // Merge with previous hole(s)
+      voidLen += gap + HOLE_W
+      nextHole += gap
+    }
+
     holes.push({ x: nextHole, w: HOLE_W })
-    nextHole += HOLE_W + calcGap()
+    nextHole += HOLE_W
   }
 }
 
@@ -78,6 +96,7 @@ function init() {
   score = 0
   holes = []
   nextHole = FIRST_HOLE
+  voidLen = 0
   genHoles()
 }
 init()

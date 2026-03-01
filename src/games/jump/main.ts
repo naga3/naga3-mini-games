@@ -10,10 +10,17 @@ const GRAVITY = 900
 const JUMP_VEL = -430
 const MOVE_SPEED = 150
 const PLAYER_R = 10
-const PLAT_H = 10
-const PLAT_GAP = 55
-const PLAT_W_BASE = 90
-const PLAT_W_MIN = 50
+const FLOOR_H = 10
+const FLOOR_GAP = 55
+const HOLE_W_BASE = 50
+const HOLE_W_MAX = 120
+
+// --- Types ---
+interface Floor {
+  y: number
+  holeX: number   // left edge of the hole
+  holeW: number   // width of the hole
+}
 
 // --- State ---
 let px = 0
@@ -25,18 +32,18 @@ let score = 0
 let best = 0
 let dead = false
 let topGenY = 0
+let floors: Floor[] = []
 
-interface Platform {
-  x: number
-  y: number
-  w: number
+/** Holes get wider as you climb */
+function holeWidth(): number {
+  return Math.min(HOLE_W_MAX, HOLE_W_BASE + score * 0.15)
 }
 
-let plats: Platform[] = []
-
-/** Platforms get narrower as you climb */
-function platWidth(): number {
-  return Math.max(PLAT_W_MIN, PLAT_W_BASE - score * 0.015)
+function addFloor(y: number, hw: number) {
+  const { w } = getCanvasSize()
+  // Hole position: ensure hole fits within screen
+  const holeX = Math.random() * (w - hw)
+  floors.push({ y, holeX, holeW: hw })
 }
 
 function init() {
@@ -48,18 +55,23 @@ function init() {
   camY = 0
   score = 0
   dead = false
-  plats = []
+  floors = []
 
-  const pw = PLAT_W_BASE
-  // Starting platform directly under the player
-  plats.push({ x: px - pw / 2, y: h - 50, w: pw })
+  // Starting floor: solid (no hole under player)
+  floors.push({ y: h - 50, holeX: -100, holeW: 0 })
 
-  // Fill screen with platforms
+  // Fill screen with floors
   topGenY = h - 50
+  const hw = HOLE_W_BASE
   while (topGenY > -h) {
-    topGenY -= PLAT_GAP
-    plats.push({ x: Math.random() * (w - pw), y: topGenY, w: pw })
+    topGenY -= FLOOR_GAP
+    addFloor(topGenY, hw)
   }
+}
+
+/** Check if player is over solid floor (not in the hole) */
+function isOnSolid(f: Floor): boolean {
+  return px + PLAYER_R <= f.holeX || px - PLAYER_R >= f.holeX + f.holeW
 }
 
 init()
@@ -82,16 +94,15 @@ function update(dt: number) {
   vy += GRAVITY * dt
   py += vy * dt
 
-  // Platform collision (only while falling)
+  // Floor collision (only while falling)
   if (vy > 0) {
-    for (const p of plats) {
+    for (const f of floors) {
       if (
-        px + PLAYER_R > p.x &&
-        px - PLAYER_R < p.x + p.w &&
-        py + PLAYER_R >= p.y &&
-        py + PLAYER_R <= p.y + PLAT_H + vy * dt
+        py + PLAYER_R >= f.y &&
+        py + PLAYER_R <= f.y + FLOOR_H + vy * dt &&
+        isOnSolid(f)
       ) {
-        py = p.y - PLAYER_R
+        py = f.y - PLAYER_R
         vy = JUMP_VEL
         break
       }
@@ -106,15 +117,15 @@ function update(dt: number) {
   const s = Math.floor(-camY / 10)
   if (s > score) score = s
 
-  // Generate new platforms above
-  const pw = platWidth()
-  while (topGenY > camY - PLAT_GAP) {
-    topGenY -= PLAT_GAP
-    plats.push({ x: Math.random() * (w - pw), y: topGenY, w: pw })
+  // Generate new floors above
+  const hw = holeWidth()
+  while (topGenY > camY - FLOOR_GAP) {
+    topGenY -= FLOOR_GAP
+    addFloor(topGenY, hw)
   }
 
-  // Remove platforms far below screen
-  plats = plats.filter(p => p.y - camY < h + 100)
+  // Remove floors far below screen
+  floors = floors.filter(f => f.y - camY < h + 100)
 
   // Death: fell below visible area
   if (py - camY > h + 50) {
@@ -130,13 +141,19 @@ function draw() {
   ctx.fillStyle = '#0f0a1e'
   ctx.fillRect(0, 0, w, h)
 
-  // Platforms
+  // Floors (full-width with holes)
   ctx.fillStyle = '#4ecdc4'
-  for (const p of plats) {
-    const sy = p.y - camY
-    ctx.beginPath()
-    ctx.roundRect(p.x, sy, p.w, PLAT_H, 4)
-    ctx.fill()
+  for (const f of floors) {
+    const sy = f.y - camY
+    // Left segment (before hole)
+    if (f.holeX > 0) {
+      ctx.fillRect(0, sy, f.holeX, FLOOR_H)
+    }
+    // Right segment (after hole)
+    const rightX = f.holeX + f.holeW
+    if (rightX < w) {
+      ctx.fillRect(rightX, sy, w - rightX, FLOOR_H)
+    }
   }
 
   // Player

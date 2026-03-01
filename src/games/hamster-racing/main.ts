@@ -24,7 +24,7 @@ function calcTrack() {
   tcy = h / 2
   const m = Math.min(w, h)
   tR = m * 0.32
-  tWBase = m * 0.10
+  tWBase = m * 0.14
   tWVar = m * 0.03
 }
 

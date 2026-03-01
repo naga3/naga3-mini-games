@@ -5,7 +5,8 @@ const canvas = document.getElementById('game') as HTMLCanvasElement
 const ctx = setupCanvas(canvas)
 
 // --- Constants ---
-const SPEED = 150           // horizontal scroll speed px/s
+const SPEED_BASE = 150      // starting speed px/s
+const SPEED_MAX = 320       // max speed px/s
 const GRAVITY = 1200
 const MAX_CHARGE = 0.8      // seconds to full power
 const JUMP_VEL = -650       // max vertical velocity
@@ -15,10 +16,9 @@ const GROUND_H = 80         // ground area height from bottom
 
 // Difficulty curve
 const FIRST_HOLE = 400
-const HOLE_W_MIN = 50
-const HOLE_W_MAX = 130
+const HOLE_W = 80           // fixed hole width
 const GAP_MAX = 350         // space between holes (easy)
-const GAP_MIN = 150         // space between holes (hard)
+const GAP_MIN = 120         // space between holes (hard)
 
 // --- Types ---
 interface Hole { x: number; w: number }
@@ -43,16 +43,15 @@ let nextHole = FIRST_HOLE
 const floorY = () => getCanvasSize().h - GROUND_H
 const screenX = () => Math.min(getCanvasSize().w * 0.28, 120)
 
-// --- Hole logic ---
-function calcHoleW() { return Math.min(HOLE_W_MAX, HOLE_W_MIN + score * 0.4) }
-function calcGap() { return Math.max(GAP_MIN, GAP_MAX - score * 0.8) }
+// --- Difficulty ---
+function curSpeed() { return Math.min(SPEED_MAX, SPEED_BASE + score * 0.3) }
+function calcGap() { return Math.max(GAP_MIN, GAP_MAX - score * 0.5) }
 
 function genHoles() {
   const limit = wx + getCanvasSize().w * 3
   while (nextHole < limit) {
-    const w = calcHoleW()
-    holes.push({ x: nextHole, w })
-    nextHole += w + calcGap()
+    holes.push({ x: nextHole, w: HOLE_W })
+    nextHole += HOLE_W + calcGap()
   }
 }
 
@@ -114,9 +113,10 @@ function update(dt: number) {
   }
 
   // Horizontal movement (stop advancing once falling into a hole)
+  const spd = curSpeed()
   if (!falling) {
-    wx += SPEED * dt
-    rot += (SPEED * dt) / R
+    wx += spd * dt
+    rot += (spd * dt) / R
   }
 
   if (onFloor) {

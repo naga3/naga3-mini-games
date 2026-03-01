@@ -45,7 +45,11 @@ const screenX = () => Math.min(getCanvasSize().w * 0.28, 120)
 
 // --- Difficulty ---
 function curSpeed() { return Math.min(SPEED_MAX, SPEED_BASE + score * 0.3) }
-function calcGap() { return Math.max(GAP_MIN, GAP_MAX - score * 0.5) }
+function calcGap() {
+  const base = Math.max(GAP_MIN, GAP_MAX - score * 0.5)
+  const jitter = base * 0.4
+  return base + (Math.random() * 2 - 1) * jitter
+}
 
 function genHoles() {
   const limit = wx + getCanvasSize().w * 3

@@ -32,6 +32,7 @@ let charging = false
 let power = 0
 let onFloor = true
 let dead = false
+let falling = false       // fell into hole – no recovery
 let started = false
 let score = 0
 let best = +(localStorage.getItem('daruma-best') ?? 0)
@@ -69,6 +70,7 @@ function init() {
   power = 0
   onFloor = true
   dead = false
+  falling = false
   started = false
   score = 0
   holes = []
@@ -111,14 +113,17 @@ function update(dt: number) {
     return
   }
 
-  // Horizontal movement
-  wx += SPEED * dt
-  rot += (SPEED * dt) / R
+  // Horizontal movement (stop advancing once falling into a hole)
+  if (!falling) {
+    wx += SPEED * dt
+    rot += (SPEED * dt) / R
+  }
 
   if (onFloor) {
     dy = floorY() - R
     if (overHole(wx)) {
       onFloor = false
+      falling = true
       vy = 0
     }
   } else {
@@ -126,15 +131,11 @@ function update(dt: number) {
     vy += GRAVITY * dt
     dy += vy * dt
 
-    // Landing check
-    if (vy > 0 && dy >= floorY() - R) {
-      if (overHole(wx)) {
-        // keep falling through hole
-      } else {
-        dy = floorY() - R
-        vy = 0
-        onFloor = true
-      }
+    // Landing check (never land if falling into hole)
+    if (!falling && vy > 0 && dy >= floorY() - R) {
+      dy = floorY() - R
+      vy = 0
+      onFloor = true
     }
   }
 

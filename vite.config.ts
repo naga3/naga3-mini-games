@@ -10,6 +10,7 @@ export default defineConfig({
         walking: resolve(__dirname, 'src/games/walking-demo/index.html'),
         snake: resolve(__dirname, 'src/games/snake/index.html'),
         jump: resolve(__dirname, 'src/games/jump/index.html'),
+        'daruma-jump': resolve(__dirname, 'src/games/daruma-jump/index.html'),
       },
     },
   },

@@ -9,6 +9,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         walking: resolve(__dirname, 'src/games/walking-demo/index.html'),
         snake: resolve(__dirname, 'src/games/snake/index.html'),
+        jump: resolve(__dirname, 'src/games/jump/index.html'),
       },
     },
   },

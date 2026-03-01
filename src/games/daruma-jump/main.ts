@@ -78,8 +78,8 @@ function genHoles() {
 }
 
 function overHole(worldX: number): boolean {
-  // Shrink hole hitbox by R/3 on each side → 1/3 on ground = safe
-  const m = R / 3
+  // Shrink hole hitbox by 14px on each side for lenient detection
+  const m = 14
   return holes.some(h => worldX > h.x + m && worldX < h.x + h.w - m)
 }
 

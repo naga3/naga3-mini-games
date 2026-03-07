@@ -14,6 +14,7 @@ export default defineConfig({
         'hamster-racing': resolve(__dirname, 'src/games/hamster-racing/index.html'),
         'ninja-climbing': resolve(__dirname, 'src/games/ninja-climbing/index.html'),
         'spinning-jump-tiara': resolve(__dirname, 'src/games/spinning-jump-tiara/index.html'),
+        'rabbit-othello': resolve(__dirname, 'src/games/rabbit-othello/index.html'),
       },
     },
   },

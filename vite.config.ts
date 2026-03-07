@@ -13,6 +13,7 @@ export default defineConfig({
         'daruma-jump': resolve(__dirname, 'src/games/daruma-jump/index.html'),
         'hamster-racing': resolve(__dirname, 'src/games/hamster-racing/index.html'),
         'ninja-climbing': resolve(__dirname, 'src/games/ninja-climbing/index.html'),
+        'spinning-jump-tiara': resolve(__dirname, 'src/games/spinning-jump-tiara/index.html'),
       },
     },
   },

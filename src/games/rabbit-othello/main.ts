@@ -231,7 +231,7 @@ function drawRabbit(cx: number, cy: number, radius: number, isBlack: boolean) {
   ctx.restore();
 }
 
-function draw(now: number) {
+function draw(_now: number) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Background

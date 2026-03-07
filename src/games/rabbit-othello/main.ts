@@ -1,7 +1,7 @@
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
 
-const BOARD_SIZE = 8;
+const BOARD_SIZE = 10;
 const PLAYER = 1;   // black rabbit (player)
 const CPU = 2;       // white rabbit (cpu)
 
@@ -10,21 +10,19 @@ let cellSize = 0;
 let boardOffsetX = 0;
 let boardOffsetY = 0;
 let gameOver = false;
-let playerCanPlace = true;
 
-// CPU timing - starts slow, gets faster
-let cpuInterval = 3000;    // ms between CPU moves
-const CPU_MIN_INTERVAL = 400;
-const CPU_SPEED_DECAY = 0.92;
+// CPU timing - starts fairly fast, gets faster
+let cpuInterval = 1200;    // ms between CPU moves (was 3000)
+const CPU_MIN_INTERVAL = 300;
+const CPU_SPEED_DECAY = 0.93;
 let lastCpuMove = 0;
 
 // Score
-let playerScore = 2;
-let cpuScore = 2;
+let playerScore = 0;
+let cpuScore = 0;
 
 // Message display
 let message = 'タップしてコマを置こう！';
-let messageTimer = 0;
 
 function resize() {
   canvas.width = window.innerWidth;
@@ -37,17 +35,40 @@ function resize() {
 
 function initBoard() {
   board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
-  const mid = BOARD_SIZE / 2;
-  board[mid - 1][mid - 1] = CPU;
-  board[mid][mid] = CPU;
-  board[mid - 1][mid] = PLAYER;
-  board[mid][mid - 1] = PLAYER;
+
+  // Place initial pieces: scattered pattern across the board
+  const initialPieces: [number, number, number][] = [
+    // Center cluster
+    [4, 4, CPU], [4, 5, PLAYER],
+    [5, 4, PLAYER], [5, 5, CPU],
+    // Top area
+    [1, 2, PLAYER], [1, 7, CPU],
+    [2, 1, CPU], [2, 8, PLAYER],
+    // Bottom area
+    [7, 1, PLAYER], [7, 8, CPU],
+    [8, 2, CPU], [8, 7, PLAYER],
+    // Left/Right edges
+    [3, 0, PLAYER], [6, 0, CPU],
+    [3, 9, CPU], [6, 9, PLAYER],
+    // Mid area scattered
+    [1, 4, CPU], [1, 5, PLAYER],
+    [8, 4, PLAYER], [8, 5, CPU],
+    [4, 1, PLAYER], [5, 8, CPU],
+    [4, 8, CPU], [5, 1, PLAYER],
+    // Extra scattered
+    [2, 4, PLAYER], [7, 5, CPU],
+    [3, 3, CPU], [6, 6, PLAYER],
+    [3, 6, PLAYER], [6, 3, CPU],
+  ];
+
+  for (const [r, c, color] of initialPieces) {
+    board[r][c] = color;
+  }
+
   gameOver = false;
-  playerCanPlace = true;
-  cpuInterval = 3000;
+  cpuInterval = 1200;
   lastCpuMove = performance.now();
-  playerScore = 2;
-  cpuScore = 2;
+  updateScore();
   message = 'タップしてコマを置こう！';
 }
 
@@ -79,22 +100,13 @@ function getFlips(row: number, col: number, color: number): [number, number][] {
   return allFlips;
 }
 
-function getValidMoves(color: number): [number, number][] {
-  const moves: [number, number][] = [];
-  for (let r = 0; r < BOARD_SIZE; r++) {
-    for (let c = 0; c < BOARD_SIZE; c++) {
-      if (getFlips(r, c, color).length > 0) {
-        moves.push([r, c]);
-      }
-    }
-  }
-  return moves;
-}
-
+// Place a stone anywhere empty - flip if possible, otherwise just place
 function placeStone(row: number, col: number, color: number): boolean {
+  if (board[row][col] !== 0) return false;
+
   const flips = getFlips(row, col, color);
-  if (flips.length === 0) return false;
   board[row][col] = color;
+
   for (const [r, c] of flips) {
     board[r][c] = color;
   }
@@ -113,30 +125,19 @@ function updateScore() {
   }
 }
 
-function checkGameOver() {
-  const playerMoves = getValidMoves(PLAYER);
-  const cpuMoves = getValidMoves(CPU);
-  playerCanPlace = playerMoves.length > 0;
-
-  if (playerMoves.length === 0 && cpuMoves.length === 0) {
-    gameOver = true;
-    if (playerScore > cpuScore) {
-      message = `勝ち！ 🐰 ${playerScore} - ${cpuScore}`;
-    } else if (cpuScore > playerScore) {
-      message = `負け… 🐰 ${playerScore} - ${cpuScore}`;
-    } else {
-      message = `引き分け！ ${playerScore} - ${cpuScore}`;
-    }
-  }
-
-  // Also check if board is full
-  let empty = 0;
+function getEmptyCells(): [number, number][] {
+  const cells: [number, number][] = [];
   for (let r = 0; r < BOARD_SIZE; r++) {
     for (let c = 0; c < BOARD_SIZE; c++) {
-      if (board[r][c] === 0) empty++;
+      if (board[r][c] === 0) cells.push([r, c]);
     }
   }
-  if (empty === 0) {
+  return cells;
+}
+
+function checkGameOver() {
+  const empty = getEmptyCells();
+  if (empty.length === 0) {
     gameOver = true;
     if (playerScore > cpuScore) {
       message = `勝ち！ 🐰 ${playerScore} - ${cpuScore}`;
@@ -273,17 +274,20 @@ function draw(_now: number) {
     ctx.stroke();
   }
 
-  // Valid move highlights for player
-  if (!gameOver && playerCanPlace) {
-    const validMoves = getValidMoves(PLAYER);
-    for (const [r, c] of validMoves) {
-      ctx.fillStyle = 'rgba(255, 255, 100, 0.2)';
-      ctx.fillRect(
-        boardOffsetX + c * cellSize + 1,
-        boardOffsetY + r * cellSize + 1,
-        cellSize - 2,
-        cellSize - 2,
-      );
+  // Highlight all empty cells as valid (player can place anywhere)
+  if (!gameOver) {
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (board[r][c] === 0) {
+          ctx.fillStyle = 'rgba(255, 255, 100, 0.1)';
+          ctx.fillRect(
+            boardOffsetX + c * cellSize + 1,
+            boardOffsetY + r * cellSize + 1,
+            cellSize - 2,
+            cellSize - 2,
+          );
+        }
+      }
     }
   }
 
@@ -303,7 +307,7 @@ function draw(_now: number) {
   if (!gameOver) {
     const barY = boardOffsetY + BOARD_SIZE * cellSize + 16;
     const barW = cellSize * BOARD_SIZE;
-    const speed = 1 - (cpuInterval - CPU_MIN_INTERVAL) / (3000 - CPU_MIN_INTERVAL);
+    const speed = 1 - (cpuInterval - CPU_MIN_INTERVAL) / (1200 - CPU_MIN_INTERVAL);
     ctx.fillStyle = '#333';
     ctx.fillRect(boardOffsetX, barY, barW, 8);
     ctx.fillStyle = `hsl(${(1 - speed) * 120}, 80%, 50%)`;
@@ -334,15 +338,40 @@ function cpuMove(now: number) {
   if (gameOver) return;
   if (now - lastCpuMove < cpuInterval) return;
 
-  const moves = getValidMoves(CPU);
-  if (moves.length === 0) {
-    lastCpuMove = now;
+  const empty = getEmptyCells();
+  if (empty.length === 0) {
+    checkGameOver();
     return;
   }
 
-  // Random move
-  const [r, c] = moves[Math.floor(Math.random() * moves.length)];
-  placeStone(r, c, CPU);
+  // Prefer moves that flip pieces, but can place anywhere
+  const flippingMoves: [number, number, number][] = [];
+  const plainMoves: [number, number][] = [];
+
+  for (const [r, c] of empty) {
+    const flips = getFlips(r, c, CPU);
+    if (flips.length > 0) {
+      flippingMoves.push([r, c, flips.length]);
+    } else {
+      plainMoves.push([r, c]);
+    }
+  }
+
+  let chosen: [number, number];
+  if (flippingMoves.length > 0 && Math.random() < 0.7) {
+    // 70% chance to pick a flipping move (prefer more flips)
+    flippingMoves.sort((a, b) => b[2] - a[2]);
+    const top = Math.min(3, flippingMoves.length);
+    const pick = flippingMoves[Math.floor(Math.random() * top)];
+    chosen = [pick[0], pick[1]];
+  } else if (plainMoves.length > 0) {
+    chosen = plainMoves[Math.floor(Math.random() * plainMoves.length)];
+  } else {
+    const pick = flippingMoves[Math.floor(Math.random() * flippingMoves.length)];
+    chosen = [pick[0], pick[1]];
+  }
+
+  placeStone(chosen[0], chosen[1], CPU);
   lastCpuMove = now;
 
   // Speed up
@@ -363,16 +392,13 @@ function handleClick(x: number, y: number) {
     return;
   }
 
-  if (!playerCanPlace) return;
-
   const col = Math.floor((x - boardOffsetX) / cellSize);
   const row = Math.floor((y - boardOffsetY) / cellSize);
 
   if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) return;
 
-  if (placeStone(row, col, PLAYER)) {
-    checkGameOver();
-  }
+  placeStone(row, col, PLAYER);
+  checkGameOver();
 }
 
 canvas.addEventListener('click', (e) => {

@@ -11,16 +11,16 @@ const GRAVITY = 1200
 const MAX_CHARGE = 0.8
 const JUMP_VEL = -960
 const MIN_JUMP = 0.2
-const R = 18                // ballerina radius
+const R = 36                // ballerina radius (2x size)
 const GROUND_H = 80
 
 // Goal & tiara placement
 const GOAL_DIST = 6000      // distance to goal in world px
 const TIARA_SPACING_MIN = 120
 const TIARA_SPACING_MAX = 280
-const TIARA_SIZE = 14
+const TIARA_SIZE = 28
 const TIARA_FLOAT_H_MIN = 0   // min height above ground (0 = on ground)
-const TIARA_FLOAT_H_MAX = 160 // max height above ground
+const TIARA_FLOAT_H_MAX = 200 // max height above ground
 
 // --- Types ---
 interface Tiara { x: number; y: number; collected: boolean }
@@ -183,7 +183,7 @@ function drawBallerinaWalking(x: number, y: number, phase: number, sx = 1, sy = 
 
   // Back leg
   ctx.strokeStyle = '#ffe0b2'
-  ctx.lineWidth = 3.5
+  ctx.lineWidth = 5
   ctx.lineCap = 'round'
   ctx.beginPath()
   ctx.moveTo(0, R * 0.15)
@@ -196,7 +196,7 @@ function drawBallerinaWalking(x: number, y: number, phase: number, sx = 1, sy = 
 
   // Back arm
   ctx.strokeStyle = '#ffe0b2'
-  ctx.lineWidth = 3
+  ctx.lineWidth = 4
   ctx.beginPath()
   ctx.moveTo(0, -R * 0.35)
   ctx.quadraticCurveTo(-R * 0.5, -R * 0.6, -R * 0.3, -R * 0.95)
@@ -232,7 +232,7 @@ function drawBallerinaWalking(x: number, y: number, phase: number, sx = 1, sy = 
 
   // Front leg
   ctx.strokeStyle = '#ffe0b2'
-  ctx.lineWidth = 3.5
+  ctx.lineWidth = 5
   ctx.beginPath()
   ctx.moveTo(0, R * 0.15)
   const frontLegX = Math.sin(legSwing) * R * 0.7
@@ -273,7 +273,7 @@ function drawBallerinaWalking(x: number, y: number, phase: number, sx = 1, sy = 
 
   // Front arm (graceful ballet pose)
   ctx.strokeStyle = '#ffe0b2'
-  ctx.lineWidth = 3
+  ctx.lineWidth = 4
   ctx.beginPath()
   ctx.moveTo(R * 0.1, -R * 0.35)
   ctx.quadraticCurveTo(R * 0.7, -R * 0.55, R * 0.8, -R * 0.8)
@@ -293,7 +293,7 @@ function drawBallerinaPirouette(x: number, y: number, angle: number) {
 
   // Legs together, pointed toe
   ctx.strokeStyle = '#ffe0b2'
-  ctx.lineWidth = 3.5
+  ctx.lineWidth = 5
   ctx.lineCap = 'round'
   ctx.beginPath()
   ctx.moveTo(-2 * scaleX, R * 0.15)
@@ -361,7 +361,7 @@ function drawBallerinaPirouette(x: number, y: number, angle: number) {
 
   // Arms raised above head (pirouette pose)
   ctx.strokeStyle = '#ffe0b2'
-  ctx.lineWidth = 3
+  ctx.lineWidth = 4
   ctx.lineCap = 'round'
   // Left arm
   ctx.beginPath()
@@ -388,13 +388,6 @@ function drawTiara(x: number, y: number, glow: boolean) {
   }
 
   const s = TIARA_SIZE
-
-  // Base band
-  ctx.strokeStyle = '#ffd700'
-  ctx.lineWidth = 2
-  ctx.beginPath()
-  ctx.arc(0, s * 0.15, s * 0.5, 0, Math.PI)
-  ctx.stroke()
 
   // Crown points
   ctx.fillStyle = '#ffd700'
@@ -428,7 +421,7 @@ function drawTiara(x: number, y: number, glow: boolean) {
 function drawGoal(sx: number) {
   const gy = floorY()
   // Pole
-  ctx.strokeStyle = '#fff'
+  ctx.strokeStyle = '#6a1b9a'
   ctx.lineWidth = 3
   ctx.beginPath()
   ctx.moveTo(sx, gy)
@@ -445,7 +438,7 @@ function drawGoal(sx: number) {
   ctx.fill()
 
   // "GOAL" text
-  ctx.fillStyle = '#fff'
+  ctx.fillStyle = '#6a1b9a'
   ctx.font = 'bold 12px sans-serif'
   ctx.textAlign = 'center'
   ctx.fillText('GOAL', sx, gy - 130)
@@ -458,27 +451,35 @@ function draw() {
   const cam = wx - screenX()
   const dsx = screenX()
 
-  // Background gradient (pink/purple ballet theme)
+  // Background gradient (bright ballet stage theme)
   const bg = ctx.createLinearGradient(0, 0, 0, h)
-  bg.addColorStop(0, '#1a0a2e')
-  bg.addColorStop(0.5, '#2d1541')
-  bg.addColorStop(1, '#3e1f56')
+  bg.addColorStop(0, '#fce4ec')
+  bg.addColorStop(0.4, '#f8bbd0')
+  bg.addColorStop(0.7, '#f3e5f5')
+  bg.addColorStop(1, '#e1bee7')
   ctx.fillStyle = bg
   ctx.fillRect(0, 0, w, h)
 
-  // Stars
-  ctx.fillStyle = 'rgba(255,255,255,0.4)'
+  // Soft spotlight effects
+  const spotGrad = ctx.createRadialGradient(w * 0.5, 0, 0, w * 0.5, 0, h * 0.8)
+  spotGrad.addColorStop(0, 'rgba(255,255,255,0.3)')
+  spotGrad.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.fillStyle = spotGrad
+  ctx.fillRect(0, 0, w, h)
+
+  // Sparkles (instead of stars)
+  ctx.fillStyle = 'rgba(255,215,0,0.4)'
   for (let i = 0; i < 40; i++) {
     const sx2 = ((i * 173 + 29) % w + w) % w
     const sy = ((i * 97 + 53) % (gy * 0.7))
-    const sr = 0.5 + (i % 3) * 0.5
+    const sr = 0.8 + (i % 3) * 0.6
     ctx.beginPath()
     ctx.arc(sx2, sy, sr, 0, Math.PI * 2)
     ctx.fill()
   }
 
-  // Background hills (parallax)
-  ctx.fillStyle = '#241335'
+  // Background curtains (parallax)
+  ctx.fillStyle = 'rgba(206,147,216,0.3)'
   const hillOff = cam * 0.08
   for (let hx = -(hillOff % 220) - 220; hx < w + 220; hx += 220) {
     const hh = 50 + Math.abs(Math.sin((hx + hillOff) * 0.005)) * 40
@@ -488,14 +489,14 @@ function draw() {
     ctx.fill()
   }
 
-  // Ground (stage floor)
-  ctx.fillStyle = '#5d4037'
+  // Ground (polished stage floor)
+  ctx.fillStyle = '#bcaaa4'
   ctx.fillRect(0, gy, w, GROUND_H)
-  ctx.fillStyle = '#8d6e63'
+  ctx.fillStyle = '#d7ccc8'
   ctx.fillRect(0, gy, w, 3)
 
   // Stage floor pattern (wooden planks)
-  ctx.strokeStyle = 'rgba(0,0,0,0.15)'
+  ctx.strokeStyle = 'rgba(0,0,0,0.08)'
   ctx.lineWidth = 1
   const plankOff = cam % 60
   for (let px = -plankOff; px < w; px += 60) {
@@ -567,11 +568,11 @@ function draw() {
   // HUD
   ctx.textAlign = 'right'
   // Tiara count
-  ctx.fillStyle = '#ffd700'
+  ctx.fillStyle = '#d4a017'
   ctx.font = 'bold 20px sans-serif'
   ctx.fillText(`👑 ${tiaraCount}`, w - 16, 40)
   // Progress
-  ctx.fillStyle = '#fff'
+  ctx.fillStyle = '#6a1b9a'
   ctx.font = '14px sans-serif'
   const progress = Math.min(100, Math.floor((wx / GOAL_DIST) * 100))
   ctx.fillText(`${progress}%`, w - 16, 60)
@@ -581,52 +582,52 @@ function draw() {
   const pbH = 6
   const pbX = w - 16 - pbW
   const pbY = 68
-  ctx.fillStyle = 'rgba(255,255,255,0.2)'
+  ctx.fillStyle = 'rgba(0,0,0,0.1)'
   ctx.fillRect(pbX, pbY, pbW, pbH)
   ctx.fillStyle = '#e91e63'
   ctx.fillRect(pbX, pbY, pbW * Math.min(1, wx / GOAL_DIST), pbH)
 
   if (best > 0) {
     ctx.font = '13px sans-serif'
-    ctx.fillStyle = '#888'
+    ctx.fillStyle = '#9e9e9e'
     ctx.textAlign = 'right'
     ctx.fillText(`Best: 👑${best}`, w - 16, 90)
   }
 
   // Start screen
   if (!started && !dead && !cleared) {
-    ctx.fillStyle = 'rgba(0,0,0,0.3)'
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'
     ctx.fillRect(0, 0, w, h)
 
     ctx.textAlign = 'center'
-    ctx.fillStyle = '#fff'
+    ctx.fillStyle = '#6a1b9a'
     ctx.font = 'bold 24px sans-serif'
     ctx.fillText('バレリーナジャンプ', w / 2, h / 2 - 50)
 
     ctx.font = '16px sans-serif'
-    ctx.fillStyle = 'rgba(255,255,255,0.8)'
+    ctx.fillStyle = '#880e4f'
     ctx.fillText('長押しでパワーを溜めてジャンプ！', w / 2, h / 2 - 10)
 
-    ctx.fillStyle = '#ffd700'
+    ctx.fillStyle = '#d4a017'
     ctx.fillText('くるくる回ってティアラを集めよう', w / 2, h / 2 + 18)
 
     ctx.font = '14px sans-serif'
-    ctx.fillStyle = 'rgba(255,255,255,0.5)'
+    ctx.fillStyle = 'rgba(106,27,154,0.6)'
     ctx.fillText('ゴールまでにたくさん集めよう！', w / 2, h / 2 + 48)
     ctx.fillText('タップでスタート', w / 2, h / 2 + 75)
   }
 
   // Clear screen
   if (cleared) {
-    ctx.fillStyle = 'rgba(0,0,0,0.6)'
+    ctx.fillStyle = 'rgba(255,255,255,0.7)'
     ctx.fillRect(0, 0, w, h)
 
     ctx.textAlign = 'center'
-    ctx.fillStyle = '#ffd700'
+    ctx.fillStyle = '#d4a017'
     ctx.font = 'bold 32px sans-serif'
     ctx.fillText('CLEAR!', w / 2, h / 2 - 40)
 
-    ctx.fillStyle = '#fff'
+    ctx.fillStyle = '#6a1b9a'
     ctx.font = 'bold 24px sans-serif'
     ctx.fillText(`👑 ${tiaraCount}個 ゲット！`, w / 2, h / 2 + 5)
 
@@ -634,7 +635,7 @@ function draw() {
     ctx.fillText(`Best: ${best}個`, w / 2, h / 2 + 35)
 
     ctx.font = '16px sans-serif'
-    ctx.fillStyle = '#aaa'
+    ctx.fillStyle = '#888'
     ctx.fillText('タップでリトライ', w / 2, h / 2 + 75)
   }
 }

@@ -29,8 +29,9 @@ interface Tiara { x: number; y: number; collected: boolean }
 let wx = 0
 let dy = 0
 let vy = 0
-let rot = 0
+let spinAngle = 0           // pirouette angle during jump
 let spinSpeed = 0           // spinning speed during jump
+let walkPhase = 0           // walk cycle phase
 let charging = false
 let power = 0
 let onFloor = true
@@ -69,8 +70,9 @@ function init() {
   wx = 0
   dy = floorY() - R
   vy = 0
-  rot = 0
+  spinAngle = 0
   spinSpeed = 0
+  walkPhase = 0
   charging = false
   power = 0
   onFloor = true
@@ -123,12 +125,13 @@ function update(dt: number) {
   const spd = curSpeed()
   wx += spd * dt
 
-  // Rotation: spin fast while airborne, slow roll on ground
+  // Pirouette spin while airborne, walk cycle on ground
   if (!onFloor) {
-    rot += spinSpeed * dt
+    spinAngle += spinSpeed * dt
   } else {
-    rot += (spd * dt) / R
+    spinAngle = 0
     spinSpeed = 0
+    walkPhase += (spd * dt) / R
   }
 
   if (onFloor) {
@@ -170,100 +173,205 @@ function update(dt: number) {
   tiaras = tiaras.filter(t => t.x > wx - getCanvasSize().w || !t.collected)
 }
 
-// --- Draw ballerina ---
-function drawBallerina(x: number, y: number, angle: number, sx = 1, sy = 1) {
+// --- Draw ballerina (right-facing side view) ---
+function drawBallerinaWalking(x: number, y: number, phase: number, sx = 1, sy = 1) {
   ctx.save()
   ctx.translate(x, y)
   ctx.scale(sx, sy)
-  ctx.rotate(angle)
 
-  // Tutu (skirt) - triangle shape
+  const legSwing = Math.sin(phase) * 0.4  // leg swing angle
+
+  // Back leg
+  ctx.strokeStyle = '#ffe0b2'
+  ctx.lineWidth = 3.5
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  ctx.moveTo(0, R * 0.15)
+  const backLegX = -Math.sin(legSwing) * R * 0.7
+  const backLegY = R * 0.15 + Math.cos(legSwing) * R * 0.7
+  ctx.lineTo(backLegX, backLegY)
+  // Foot
+  ctx.lineTo(backLegX + R * 0.15, backLegY + R * 0.08)
+  ctx.stroke()
+
+  // Back arm
+  ctx.strokeStyle = '#ffe0b2'
+  ctx.lineWidth = 3
+  ctx.beginPath()
+  ctx.moveTo(0, -R * 0.35)
+  ctx.quadraticCurveTo(-R * 0.5, -R * 0.6, -R * 0.3, -R * 0.95)
+  ctx.stroke()
+
+  // Leotard body
+  ctx.fillStyle = '#ce93d8'
+  ctx.beginPath()
+  ctx.ellipse(0, -R * 0.1, R * 0.32, R * 0.5, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = '#ab47bc'
+  ctx.lineWidth = 1
+  ctx.stroke()
+
+  // Tutu (skirt)
   ctx.fillStyle = '#f48fb1'
   ctx.beginPath()
-  ctx.moveTo(-R * 1.1, R * 0.3)
-  ctx.lineTo(R * 1.1, R * 0.3)
-  ctx.lineTo(0, -R * 0.1)
+  ctx.moveTo(-R * 0.4, R * 0.1)
+  ctx.quadraticCurveTo(-R * 0.1, R * 0.0, R * 0.5, R * 0.05)
+  ctx.lineTo(R * 0.6, R * 0.35)
+  ctx.quadraticCurveTo(R * 0.2, R * 0.45, -R * 0.15, R * 0.35)
+  ctx.quadraticCurveTo(-R * 0.5, R * 0.3, -R * 0.45, R * 0.15)
   ctx.closePath()
   ctx.fill()
   // Tutu ruffles
   ctx.strokeStyle = '#f06292'
   ctx.lineWidth = 1.5
   ctx.beginPath()
-  ctx.moveTo(-R * 1.1, R * 0.3)
-  ctx.quadraticCurveTo(-R * 0.55, R * 0.5, 0, R * 0.3)
-  ctx.quadraticCurveTo(R * 0.55, R * 0.5, R * 1.1, R * 0.3)
+  ctx.moveTo(-R * 0.45, R * 0.2)
+  ctx.quadraticCurveTo(-R * 0.1, R * 0.45, R * 0.2, R * 0.38)
+  ctx.quadraticCurveTo(R * 0.45, R * 0.42, R * 0.6, R * 0.35)
   ctx.stroke()
 
-  // Body
-  ctx.fillStyle = '#ffe0b2'
+  // Front leg
+  ctx.strokeStyle = '#ffe0b2'
+  ctx.lineWidth = 3.5
   ctx.beginPath()
-  ctx.ellipse(0, -R * 0.1, R * 0.35, R * 0.55, 0, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.strokeStyle = '#ffcc80'
-  ctx.lineWidth = 1
+  ctx.moveTo(0, R * 0.15)
+  const frontLegX = Math.sin(legSwing) * R * 0.7
+  const frontLegY = R * 0.15 + Math.cos(legSwing) * R * 0.7
+  ctx.lineTo(frontLegX, frontLegY)
+  // Pointed toe
+  ctx.lineTo(frontLegX + R * 0.18, frontLegY)
   ctx.stroke()
 
   // Head
   ctx.fillStyle = '#ffe0b2'
   ctx.beginPath()
-  ctx.arc(0, -R * 0.7, R * 0.38, 0, Math.PI * 2)
+  ctx.arc(R * 0.05, -R * 0.75, R * 0.35, 0, Math.PI * 2)
   ctx.fill()
-  ctx.strokeStyle = '#ffcc80'
-  ctx.lineWidth = 1
-  ctx.stroke()
 
-  // Hair bun
+  // Hair (brown, back of head)
   ctx.fillStyle = '#5d4037'
   ctx.beginPath()
-  ctx.arc(0, -R * 1.05, R * 0.22, 0, Math.PI * 2)
+  ctx.arc(R * 0.05, -R * 0.75, R * 0.35, -Math.PI * 0.7, Math.PI * 0.1)
   ctx.fill()
-  // Hair on head
+  // Hair bun on top
   ctx.beginPath()
-  ctx.ellipse(0, -R * 0.85, R * 0.38, R * 0.18, 0, Math.PI, Math.PI * 2)
+  ctx.arc(R * 0.0, -R * 1.1, R * 0.18, 0, Math.PI * 2)
   ctx.fill()
 
-  // Eyes
+  // Eye
   ctx.fillStyle = '#212121'
   ctx.beginPath()
-  ctx.arc(-R * 0.15, -R * 0.72, R * 0.06, 0, Math.PI * 2)
-  ctx.arc(R * 0.15, -R * 0.72, R * 0.06, 0, Math.PI * 2)
+  ctx.arc(R * 0.2, -R * 0.78, R * 0.05, 0, Math.PI * 2)
   ctx.fill()
 
   // Smile
   ctx.strokeStyle = '#e91e63'
   ctx.lineWidth = 1.2
   ctx.beginPath()
-  ctx.arc(0, -R * 0.6, R * 0.12, 0.2, Math.PI - 0.2)
+  ctx.arc(R * 0.22, -R * 0.65, R * 0.08, 0, Math.PI * 0.7)
   ctx.stroke()
 
-  // Arms (extended like ballet pose)
+  // Front arm (graceful ballet pose)
+  ctx.strokeStyle = '#ffe0b2'
+  ctx.lineWidth = 3
+  ctx.beginPath()
+  ctx.moveTo(R * 0.1, -R * 0.35)
+  ctx.quadraticCurveTo(R * 0.7, -R * 0.55, R * 0.8, -R * 0.8)
+  ctx.stroke()
+
+  ctx.restore()
+}
+
+// --- Draw ballerina pirouette (spinning around vertical axis) ---
+function drawBallerinaPirouette(x: number, y: number, angle: number) {
+  ctx.save()
+  ctx.translate(x, y)
+
+  // Use cos(angle) to simulate horizontal squish for 3D spin effect
+  const scaleX = Math.cos(angle)
+  const absScale = Math.abs(scaleX)
+
+  // Legs together, pointed toe
+  ctx.strokeStyle = '#ffe0b2'
+  ctx.lineWidth = 3.5
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  ctx.moveTo(-2 * scaleX, R * 0.15)
+  ctx.lineTo(-2 * scaleX, R * 0.85)
+  ctx.lineTo(-2 * scaleX, R * 0.95)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.moveTo(2 * scaleX, R * 0.15)
+  ctx.lineTo(2 * scaleX, R * 0.85)
+  ctx.lineTo(2 * scaleX, R * 0.95)
+  ctx.stroke()
+
+  // Leotard body (squished horizontally for spin)
+  ctx.fillStyle = '#ce93d8'
+  ctx.beginPath()
+  ctx.ellipse(0, -R * 0.1, Math.max(R * 0.1, R * 0.32 * absScale), R * 0.5, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = '#ab47bc'
+  ctx.lineWidth = 1
+  ctx.stroke()
+
+  // Tutu (squished for spin)
+  const tutuW = Math.max(R * 0.2, R * 1.0 * absScale)
+  ctx.fillStyle = '#f48fb1'
+  ctx.beginPath()
+  ctx.ellipse(0, R * 0.15, tutuW, R * 0.15, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = '#f06292'
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+  ctx.ellipse(0, R * 0.2, tutuW * 0.9, R * 0.1, 0, 0, Math.PI)
+  ctx.stroke()
+
+  // Head
+  ctx.fillStyle = '#ffe0b2'
+  ctx.beginPath()
+  ctx.arc(0, -R * 0.75, R * 0.33, 0, Math.PI * 2)
+  ctx.fill()
+
+  // Hair
+  ctx.fillStyle = '#5d4037'
+  ctx.beginPath()
+  ctx.ellipse(0, -R * 0.88, R * 0.33, R * 0.2, 0, Math.PI, Math.PI * 2)
+  ctx.fill()
+  // Hair bun
+  ctx.beginPath()
+  ctx.arc(0, -R * 1.08, R * 0.16, 0, Math.PI * 2)
+  ctx.fill()
+
+  // Face (only when facing forward-ish)
+  if (absScale > 0.3) {
+    // Eyes
+    ctx.fillStyle = '#212121'
+    ctx.beginPath()
+    ctx.arc(-R * 0.12 * scaleX, -R * 0.78, R * 0.04, 0, Math.PI * 2)
+    ctx.arc(R * 0.12 * scaleX, -R * 0.78, R * 0.04, 0, Math.PI * 2)
+    ctx.fill()
+    // Smile
+    ctx.strokeStyle = '#e91e63'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.arc(0, -R * 0.65, R * 0.08, 0.2, Math.PI - 0.2)
+    ctx.stroke()
+  }
+
+  // Arms raised above head (pirouette pose)
   ctx.strokeStyle = '#ffe0b2'
   ctx.lineWidth = 3
   ctx.lineCap = 'round'
-  // Left arm up
+  // Left arm
   ctx.beginPath()
-  ctx.moveTo(-R * 0.3, -R * 0.2)
-  ctx.quadraticCurveTo(-R * 0.9, -R * 0.7, -R * 0.7, -R * 1.0)
+  ctx.moveTo(-R * 0.2 * scaleX, -R * 0.35)
+  ctx.quadraticCurveTo(-R * 0.3 * scaleX, -R * 0.9, -R * 0.08 * scaleX, -R * 1.3)
   ctx.stroke()
-  // Right arm out
+  // Right arm
   ctx.beginPath()
-  ctx.moveTo(R * 0.3, -R * 0.2)
-  ctx.quadraticCurveTo(R * 0.9, -R * 0.4, R * 1.0, -R * 0.6)
-  ctx.stroke()
-
-  // Legs
-  ctx.strokeStyle = '#ffe0b2'
-  ctx.lineWidth = 3
-  // Left leg
-  ctx.beginPath()
-  ctx.moveTo(-R * 0.15, R * 0.3)
-  ctx.lineTo(-R * 0.25, R * 0.9)
-  ctx.stroke()
-  // Right leg (pointed toe)
-  ctx.beginPath()
-  ctx.moveTo(R * 0.15, R * 0.3)
-  ctx.lineTo(R * 0.3, R * 0.85)
-  ctx.lineTo(R * 0.4, R * 0.95)
+  ctx.moveTo(R * 0.2 * scaleX, -R * 0.35)
+  ctx.quadraticCurveTo(R * 0.3 * scaleX, -R * 0.9, R * 0.08 * scaleX, -R * 1.3)
   ctx.stroke()
 
   ctx.restore()
@@ -427,9 +535,11 @@ function draw() {
       const sqY = 1 - power * 0.2
       const sqX = 1 + power * 0.2
       const adjustedY = gy - R * sqY
-      drawBallerina(dsx, adjustedY, rot, sqX, sqY)
+      drawBallerinaWalking(dsx, adjustedY, walkPhase, sqX, sqY)
+    } else if (onFloor) {
+      drawBallerinaWalking(dsx, dy, walkPhase)
     } else {
-      drawBallerina(dsx, dy, rot)
+      drawBallerinaPirouette(dsx, dy, spinAngle)
     }
   }
 

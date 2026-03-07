@@ -5,8 +5,8 @@ const canvas = document.getElementById('game') as HTMLCanvasElement
 const ctx = setupCanvas(canvas)
 
 // --- Constants ---
-const SPEED_BASE = 150
-const SPEED_MAX = 320
+const SPEED_BASE = 220
+const SPEED_MAX = 420
 const GRAVITY = 1200
 const MAX_CHARGE = 0.8
 const JUMP_VEL = -960
@@ -61,7 +61,12 @@ function genTiaras() {
       y: floorY() - R * 2 - floatH,
       collected: false,
     })
-    nextTiaraX += TIARA_SPACING_MIN + Math.random() * (TIARA_SPACING_MAX - TIARA_SPACING_MIN)
+    // Tiaras get denser as player progresses (spacing shrinks to 40% at goal)
+    const progress = Math.min(1, nextTiaraX / GOAL_DIST)
+    const densityMul = 1 - progress * 0.6
+    const spacingMin = TIARA_SPACING_MIN * densityMul
+    const spacingMax = TIARA_SPACING_MAX * densityMul
+    nextTiaraX += spacingMin + Math.random() * (spacingMax - spacingMin)
   }
 }
 

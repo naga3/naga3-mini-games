@@ -607,7 +607,7 @@ function draw() {
     ctx.textAlign = 'center'
     ctx.fillStyle = '#6a1b9a'
     ctx.font = 'bold 24px sans-serif'
-    ctx.fillText('バレリーナジャンプ', w / 2, h / 2 - 50)
+    ctx.fillText('砧に咲くエトワール', w / 2, h / 2 - 50)
 
     ctx.font = '16px sans-serif'
     ctx.fillStyle = '#880e4f'

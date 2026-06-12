@@ -1,5 +1,7 @@
 import { setupCanvas, getCanvasSize } from '../../common/canvas'
 import { startLoop } from '../../common/game-loop'
+import { setupHold } from '../../common/input'
+import { loadBest, saveBest } from '../../common/storage'
 
 const canvas = document.getElementById('game') as HTMLCanvasElement
 const ctx = setupCanvas(canvas)
@@ -44,7 +46,7 @@ let elapsed = 0
 let laps = 0
 let prevA = 0
 let cumA = 0
-let bestLaps = +(localStorage.getItem('hamster-best') ?? '0')
+let bestLaps = loadBest('hamster-best')
 let runPhase = 0
 
 // ---------- 初期化 ----------
@@ -87,7 +89,7 @@ function update(dt: number) {
     gameOver = true
     if (laps > bestLaps) {
       bestLaps = laps
-      localStorage.setItem('hamster-best', String(bestLaps))
+      saveBest('hamster-best', bestLaps)
     }
     return
   }
@@ -326,11 +328,7 @@ function handleDown() {
   pressing = true
 }
 
-canvas.addEventListener('mousedown', (e) => { e.preventDefault(); handleDown() })
-canvas.addEventListener('mouseup', () => { pressing = false })
-canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleDown() }, { passive: false })
-canvas.addEventListener('touchend', (e) => { e.preventDefault(); pressing = false }, { passive: false })
-canvas.addEventListener('touchcancel', () => { pressing = false })
+setupHold(canvas, handleDown, () => { pressing = false })
 
 // ---------- 起動 ----------
 init()

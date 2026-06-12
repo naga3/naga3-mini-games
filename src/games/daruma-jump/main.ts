@@ -1,5 +1,7 @@
 import { setupCanvas, getCanvasSize } from '../../common/canvas'
 import { startLoop } from '../../common/game-loop'
+import { setupHold } from '../../common/input'
+import { loadBest, saveBest } from '../../common/storage'
 
 const canvas = document.getElementById('game') as HTMLCanvasElement
 const ctx = setupCanvas(canvas)
@@ -36,7 +38,7 @@ let dead = false
 let falling = false       // fell into hole – no recovery
 let started = false
 let score = 0
-let best = +(localStorage.getItem('daruma-best') ?? 0)
+let best = loadBest('daruma-best')
 let holes: Hole[] = []
 let nextHole = FIRST_HOLE
 let voidLen = 0             // current consecutive void length
@@ -121,12 +123,7 @@ function onUp() {
   onFloor = false
 }
 
-canvas.addEventListener('mousedown', e => { e.preventDefault(); onDown() })
-canvas.addEventListener('mouseup', () => onUp())
-canvas.addEventListener('mouseleave', () => { if (charging) onUp() })
-canvas.addEventListener('touchstart', e => { e.preventDefault(); onDown() }, { passive: false })
-canvas.addEventListener('touchend', e => { e.preventDefault(); onUp() }, { passive: false })
-canvas.addEventListener('touchcancel', () => { if (charging) onUp() })
+setupHold(canvas, onDown, onUp)
 
 // --- Update ---
 function update(dt: number) {
@@ -169,7 +166,7 @@ function update(dt: number) {
     dead = true
     if (score > best) {
       best = score
-      localStorage.setItem('daruma-best', String(best))
+      saveBest('daruma-best', best)
     }
   }
 

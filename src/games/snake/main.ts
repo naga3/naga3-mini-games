@@ -1,6 +1,7 @@
 import { setupCanvas, getCanvasSize } from '../../common/canvas'
 import { startLoop } from '../../common/game-loop'
 import { setupPointer } from '../../common/input'
+import { loadBest, saveBest } from '../../common/storage'
 
 const canvas = document.getElementById('game') as HTMLCanvasElement
 const ctx = setupCanvas(canvas)
@@ -29,7 +30,7 @@ let segCount = INITIAL_SEGS
 let food: Pt = { x: 0, y: 0 }
 let foodPhase = 0       // エサの脈動アニメ用
 let score = 0
-let hiScore = +(localStorage.getItem('snake-hi') ?? '0')
+let hiScore = loadBest('snake-hi')
 let gameOver = false
 let started = false
 
@@ -141,7 +142,7 @@ function update(dt: number) {
     score++
     if (score > hiScore) {
       hiScore = score
-      localStorage.setItem('snake-hi', String(hiScore))
+      saveBest('snake-hi', hiScore)
     }
     spawnFood()
   }

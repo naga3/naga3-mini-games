@@ -1,5 +1,7 @@
 import { setupCanvas, getCanvasSize } from '../../common/canvas'
 import { startLoop } from '../../common/game-loop'
+import { setupHold } from '../../common/input'
+import { loadBest, saveBest } from '../../common/storage'
 
 const canvas = document.getElementById('game') as HTMLCanvasElement
 const ctx = setupCanvas(canvas)
@@ -40,7 +42,7 @@ let started = false
 let cleared = false          // reached goal
 let score = 0
 let tiaraCount = 0
-let best = +(localStorage.getItem('tiara-best') ?? 0)
+let best = loadBest('tiara-best')
 let tiaras: Tiara[] = []
 let nextTiaraX = 200
 
@@ -111,12 +113,7 @@ function onUp() {
   spinSpeed = 8 + p * 12  // spinning speed based on jump power
 }
 
-canvas.addEventListener('mousedown', e => { e.preventDefault(); onDown() })
-canvas.addEventListener('mouseup', () => onUp())
-canvas.addEventListener('mouseleave', () => { if (charging) onUp() })
-canvas.addEventListener('touchstart', e => { e.preventDefault(); onDown() }, { passive: false })
-canvas.addEventListener('touchend', e => { e.preventDefault(); onUp() }, { passive: false })
-canvas.addEventListener('touchcancel', () => { if (charging) onUp() })
+setupHold(canvas, onDown, onUp)
 
 // --- Update ---
 function update(dt: number) {
@@ -169,7 +166,7 @@ function update(dt: number) {
     cleared = true
     if (tiaraCount > best) {
       best = tiaraCount
-      localStorage.setItem('tiara-best', String(best))
+      saveBest('tiara-best', best)
     }
   }
 

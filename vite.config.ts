@@ -15,6 +15,7 @@ export default defineConfig({
         'ninja-climbing': resolve(__dirname, 'src/games/ninja-climbing/index.html'),
         'spinning-jump-tiara': resolve(__dirname, 'src/games/spinning-jump-tiara/index.html'),
         'rabbit-othello': resolve(__dirname, 'src/games/rabbit-othello/index.html'),
+        'cat-rope-swing': resolve(__dirname, 'src/games/cat-rope-swing/index.html'),
       },
     },
   },

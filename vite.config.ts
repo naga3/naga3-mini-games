@@ -16,6 +16,7 @@ export default defineConfig({
         'spinning-jump-tiara': resolve(__dirname, 'src/games/spinning-jump-tiara/index.html'),
         'rabbit-othello': resolve(__dirname, 'src/games/rabbit-othello/index.html'),
         'cat-rope-swing': resolve(__dirname, 'src/games/cat-rope-swing/index.html'),
+        'cloud-diagram': resolve(__dirname, 'src/games/cloud-diagram/index.html'),
       },
     },
   },

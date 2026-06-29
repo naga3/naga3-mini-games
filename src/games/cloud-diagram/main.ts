@@ -9,7 +9,11 @@ import {
   computeDepth,
   countOnline,
   rotateCell,
+  rotateMask,
+  opposite,
   popcount,
+  DX,
+  DY,
   SERVICES,
   LAYERS,
   LEVELS,
@@ -421,6 +425,32 @@ function drawPipes(i: number, r: number, c: number) {
     for (let d = 0; d < 4; d++) {
       if (!(puzzle.base[i] & (1 << d))) continue
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(ends[d][0], ends[d][1]); ctx.stroke()
+    }
+  }
+
+  // 開放端マーカー：隣と噛み合っていないパイプの先に「未接続」の印を出す
+  // （回転中の見た目ズレを避けるため、論理 rot で判定して回転フレーム内に描く）
+  if (!solved) {
+    const ri = puzzle.rot[i]
+    for (let d = 0; d < 4; d++) {
+      if (!(puzzle.base[i] & (1 << d))) continue
+      const wd = (d + ri) % 4
+      const nr = r + DY[wd]
+      const nc = c + DX[wd]
+      let matched = false
+      if (nr >= 0 && nr < puzzle.rows && nc >= 0 && nc < puzzle.cols) {
+        const j = nr * puzzle.cols + nc
+        if (puzzle.present[j] && rotateMask(puzzle.base[j], puzzle.rot[j]) & (1 << opposite(wd))) matched = true
+      }
+      if (!matched) {
+        const ex = ends[d][0] * 0.9
+        const ey = ends[d][1] * 0.9
+        ctx.fillStyle = '#0b1020'
+        ctx.beginPath(); ctx.arc(ex, ey, pipeW * 0.75, 0, Math.PI * 2); ctx.fill()
+        ctx.strokeStyle = on ? '#bcd4ff' : '#5a6a86'
+        ctx.lineWidth = Math.max(1.5, pipeW * 0.3)
+        ctx.beginPath(); ctx.arc(ex, ey, pipeW * 0.7, 0, Math.PI * 2); ctx.stroke()
+      }
     }
   }
   ctx.restore()
